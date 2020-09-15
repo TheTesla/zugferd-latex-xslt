@@ -12,6 +12,10 @@
 <xsl:variable name="datistr" select="$header/ram:IssueDateTime/udt:DateTimeString"/>
 <xsl:variable name="payacc" select="/rsm:CrossIndustryDocument/rsm:SpecifiedSupplyChainTradeTransaction/ram:ApplicableSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans"/>
 <xsl:variable name="positions" select="/rsm:CrossIndustryDocument/rsm:SpecifiedSupplyChainTradeTransaction/ram:IncludedSupplyChainTradeLineItem"/>
+<xsl:variable name="tax" select="$seller/ram:SpecifiedTaxRegistration"/>
+<xsl:variable name="ustid" select="$tax/ram:ID[@schemeID='VA']"/>
+<xsl:variable name="contact" select="$seller/ram:DefinedTradeContact"/>
+
 
 <xsl:template match="/">
 
@@ -44,10 +48,13 @@
 
 \opening{Sehr geehrte}
 
+USt.-ID: <xsl:value-of select="$ustid"/>
+Tel.: <xsl:value-of select="$contact/ram:TelephoneUniversalCommunication/ram:CompleteNumber"/>
+E-Mail.: <xsl:value-of select="$contact/ram:EmailURIUniversalCommunication/ram:URIID"/>
 
 \begin{tabular}{llllll}
   Nr. &amp; Bezeichnung &amp; Umsatzsteuer &amp; Menge &amp; Einzelpreis &amp; Gesamtpreis
-  <xsl:for-each select="$positions"> \\<xsl:value-of select="ram:AssociatedDocumentLineDocument/ram:LineID"/>&amp;<xsl:value-of select="ram:SpecifiedTradeProduct/ram:Name"/> &amp;<xsl:value-of select="ram:SpecifiedSupplyChainTradeSettlement/ram:ApplicableTradeTax/ram:ApplicablePercent"/>\% &amp; <xsl:value-of select="ram:SpecifiedSupplyChainTradeDelivery/ram:BilledQuantity"/> &amp; <xsl:value-of select="ram:SpecifiedSupplyChainTradeAgreement/ram:GrossPriceProductTradePrice/ram:ChargeAmount"/> &amp; <xsl:value-of select="ram:SpecifiedSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount"/>
+  <xsl:for-each select="$positions"> \\<xsl:value-of select="ram:AssociatedDocumentLineDocument/ram:LineID"/>&amp;<xsl:value-of select="ram:SpecifiedTradeProduct/ram:Name"/> &amp;<xsl:value-of select="ram:SpecifiedSupplyChainTradeSettlement/ram:ApplicableTradeTax/ram:ApplicablePercent"/>\% &amp; <xsl:value-of select="ram:SpecifiedSupplyChainTradeDelivery/ram:BilledQuantity"/> &amp; <xsl:value-of select="ram:SpecifiedSupplyChainTradeAgreement/ram:GrossPriceProductTradePrice/ram:ChargeAmount"/> <xsl:value-of select="ram:SpecifiedSupplyChainTradeAgreement/ram:GrossPriceProductTradePrice/ram:ChargeAmount/@currencyID"/> &amp; <xsl:value-of select="ram:SpecifiedSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount"/> <xsl:value-of select="ram:SpecifiedSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount/@currencyID"/>
   </xsl:for-each>
 \end{tabular}
 
