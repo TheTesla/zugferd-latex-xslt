@@ -18,9 +18,27 @@
 <xsl:variable name="ustid" select="$tax/ram:ID[@schemeID='VA']"/>
 <xsl:variable name="contact" select="$seller/ram:DefinedTradeContact"/>
 
+<func:function name="zf:formatcurrency">
+	<xsl:param name="x" select="."/>
+  <xsl:choose>
+	  <xsl:when test="contains($x/@currencyID,'EUR')">
+      <func:result select="'\ \euro'"/>
+    </xsl:when>
+    <xsl:otherwise>
+      <func:result select="''"/>
+    </xsl:otherwise>
+  </xsl:choose>
+</func:function>
+
+
 <func:function name="zf:formatmoney">
   <xsl:param name="x" select="."/>
-  <func:result select="translate(format-number(round($x * 100) div 100, '0.00'), '.', ',')" />
+  <func:result select="concat(translate(format-number(round($x * 100) div 100, '0.00'), '.', ','), zf:formatcurrency($x))" />
+</func:function>
+
+<func:function name="zf:formattax">
+  <xsl:param name="x" select="."/>
+  <func:result select="concat(translate(format-number(round($x * 10) div 10, '0.0'), '.', ','), '\%')" />
 </func:function>
 
 
@@ -37,6 +55,11 @@
 \usepackage{lmodern} %Type1-Schriftart für nicht-englische Texte
 \usepackage{graphicx}
 \usepackage{lastpage}
+\usepackage{eurosym}
+\usepackage{tabularx}
+\usepackage{calc}
+
+
 
 \newcommand{\bank}{%
 \begin{tabular}[t]{lll}
@@ -69,30 +92,29 @@
 }%
 
 \newcommand{\itemtable}{%
-\begin{tabular}{lllllll}
-\textbf{Pos.} &amp; \textbf{Artikelnummer} &amp; \textbf{Bezeichnung} &amp; \textbf{Umsatzsteuer} &amp; \textbf{Menge} &amp; \textbf{Einzelpreis} &amp; \textbf{Gesamtpreis}
-<xsl:for-each select="$positions"> \\<xsl:value-of select="ram:AssociatedDocumentLineDocument/ram:LineID"/>&amp;<xsl:value-of select="ram:SpecifiedTradeProduct/ram:SellerAssignedID"/>&amp;<xsl:value-of select="ram:SpecifiedTradeProduct/ram:Name"/> &amp;<xsl:value-of select="round(ram:SpecifiedSupplyChainTradeSettlement/ram:ApplicableTradeTax/ram:ApplicablePercent)"/>\% &amp; <xsl:value-of select="round(ram:SpecifiedSupplyChainTradeDelivery/ram:BilledQuantity)"/> &amp; <xsl:value-of select="zf:formatmoney(ram:SpecifiedSupplyChainTradeAgreement/ram:NetPriceProductTradePrice/ram:ChargeAmount)"/> &amp; <xsl:value-of select="translate(format-number(round(ram:SpecifiedSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount * 100) div 100, '0.00'), '.', ',')"/> <xsl:value-of select="ram:SpecifiedSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount/@currencyID"/>
-  </xsl:for-each>
-\end{tabular}
+\begin{tabularx}{\textwidth/\real{0.7}}{@{}rlXrrrr@{}}
+\textbf{Pos.} &amp; \textbf{Artikelnummer} &amp; \textbf{Bezeichnung} &amp; \textbf{Umsatzsteuer} &amp; \textbf{Menge} &amp; \textbf{Einzelpreis} &amp; \textbf{Gesamtpreis} \\\hline
+<xsl:for-each select="$positions/ram:SpecifiedTradeProduct"><xsl:value-of select="../ram:AssociatedDocumentLineDocument/ram:LineID"/>&amp;<xsl:value-of select="./ram:SellerAssignedID"/>&amp;<xsl:value-of select="./ram:Name"/> &amp;<xsl:value-of select="zf:formattax(../ram:SpecifiedSupplyChainTradeSettlement/ram:ApplicableTradeTax/ram:ApplicablePercent)"/> &amp; <xsl:value-of select="round(../ram:SpecifiedSupplyChainTradeDelivery/ram:BilledQuantity)"/> &amp; <xsl:value-of select="zf:formatmoney(../ram:SpecifiedSupplyChainTradeAgreement/ram:NetPriceProductTradePrice/ram:ChargeAmount)"/> &amp; <xsl:value-of select="zf:formatmoney(../ram:SpecifiedSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount)"/>\\</xsl:for-each>\hline 
+\end{tabularx}
 }
 
 \newcommand{\taxsum}{%
-\begin{tabular}{lll}
-\textbf{Steuersatz} &amp; \textbf{Basispreis} &amp; \textbf{Steuern}
-<xsl:for-each select="$taxsum">\\<xsl:value-of select="round(ram:ApplicablePercent)"/>&amp;<xsl:value-of select="ram:LineTotalBasisAmount"/>&amp;<xsl:value-of select="translate(format-number(round(ram:CalculatedAmount * 100) div 100, '0.00'), '.', ',')"/></xsl:for-each>
-\\\textbf{Steuersumme} &amp; &amp; <xsl:value-of select="$sums/ram:TaxTotalAmount"/>
+\begin{tabular}[b]{@{}rrr@{}}
+\textbf{Steuersatz} &amp; \textbf{Basispreis} &amp; \textbf{Steuern} \\\hline
+<xsl:for-each select="$taxsum"><xsl:value-of select="zf:formattax(ram:ApplicablePercent)"/>&amp;<xsl:value-of select="zf:formatmoney(ram:LineTotalBasisAmount)"/>&amp;<xsl:value-of select="zf:formatmoney(ram:CalculatedAmount)"/>\\</xsl:for-each>\hline
+Steuersumme &amp; &amp; <xsl:value-of select="zf:formatmoney($sums/ram:TaxTotalAmount)"/>
 \end{tabular}
 }
 
 \newcommand{\sums}{%
-\begin{tabular}{lr}
-\textbf{Nettosumme:} &amp; <xsl:value-of select="$sums/ram:TaxBasisTotalAmount"/> \\
-\textbf{Zuschläge:} &amp; +<xsl:value-of select="$sums/ram:ChargeTotalAmount"/> \\
-\textbf{Abschläge:} &amp; -<xsl:value-of select="$sums/ram:AllowanceTotalAmount"/> \\
-\textbf{Steuern:} &amp; <xsl:value-of select="$sums/ram:TaxTotalAmount"/> \\
-\textbf{Bruttosumme:} &amp; <xsl:value-of select="$sums/ram:GrandTotalAmount"/> \\
-\textbf{Anzahlung:} &amp; <xsl:value-of select="$sums/ram:TotalPrepaidAmount"/> \\
-\textbf{Zahlbetrag:} &amp; <xsl:value-of select="$sums/ram:DuePayableAmount"/> \\
+\begin{tabular}[b]{@{}lcr@{}}
+Nettosumme &amp; &amp; <xsl:value-of select="zf:formatmoney($sums/ram:TaxBasisTotalAmount)"/> \\
+Zuschläge &amp; + &amp;<xsl:value-of select="zf:formatmoney($sums/ram:ChargeTotalAmount)"/> \\
+Abschläge &amp; -- &amp;<xsl:value-of select="zf:formatmoney($sums/ram:AllowanceTotalAmount)"/> \\
+Steuern &amp; &amp;<xsl:value-of select="zf:formatmoney($sums/ram:TaxTotalAmount)"/> \\
+Bruttosumme &amp; &amp;<xsl:value-of select="zf:formatmoney($sums/ram:GrandTotalAmount)"/> \\
+Anzahlung &amp; &amp;<xsl:value-of select="zf:formatmoney($sums/ram:TotalPrepaidAmount)"/> \\\hline
+\textbf{Zahlbetrag} &amp; &amp;\textbf{<xsl:value-of select="zf:formatmoney($sums/ram:DuePayableAmount)"/>} \\
 \end{tabular}
 }
 
@@ -117,12 +139,18 @@
 
 
 
-
-\scalebox{0.7}{\itemtable}
-\scalebox{0.7}{\sums}
-
-\scalebox{0.7}{\taxsum}
-
+\scalebox{0.7}{
+\begin{tabularx}{\textwidth/\real{0.7}}{@{}X@{}}
+\itemtable
+\end{tabularx}
+}
+\\
+\noindent
+\scalebox{0.7}{
+\begin{tabularx}{\textwidth/\real{0.7}}{@{}lXr@{}}
+\taxsum &amp; &amp; \sums
+\end{tabularx}
+}
 
 
 \closing{Mit freundlichen Grußen}
