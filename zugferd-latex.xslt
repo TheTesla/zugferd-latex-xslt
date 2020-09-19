@@ -41,6 +41,17 @@
   <func:result select="concat(translate(format-number(round($x * 10) div 10, '0.0'), '.', ','), '\%')" />
 </func:function>
 
+<func:function name="zf:formatallowance">
+  <xsl:param name="x" select="."/>
+  <xsl:choose>
+  <xsl:when test="$x">
+    <func:result select="concat(zf:formatmoney($x/ram:ActualAmount), '\ (', translate(format-number(round($x/ram:CalculationPercent * 100) div 100, '0.00'), '.', ','), '\%)')" />
+  </xsl:when>
+  <xsl:otherwise>
+    <func:result select="''" />
+  </xsl:otherwise>
+  </xsl:choose>
+</func:function>
 
 <xsl:template match="/">
 
@@ -58,6 +69,7 @@
 \usepackage{eurosym}
 \usepackage{tabularx}
 \usepackage{calc}
+\usepackage[a-3b]{pdfx}
 
 
 
@@ -92,17 +104,17 @@
 }%
 
 \newcommand{\itemtable}{%
-\begin{tabularx}{\textwidth/\real{0.7}}{@{}rlXrrrr@{}}
-\textbf{Pos.} &amp; \textbf{Artikelnummer} &amp; \textbf{Bezeichnung} &amp; \textbf{Umsatzsteuer} &amp; \textbf{Menge} &amp; \textbf{Einzelpreis} &amp; \textbf{Gesamtpreis} \\\hline
-<xsl:for-each select="$positions/ram:SpecifiedTradeProduct"><xsl:value-of select="../ram:AssociatedDocumentLineDocument/ram:LineID"/>&amp;<xsl:value-of select="./ram:SellerAssignedID"/>&amp;<xsl:value-of select="./ram:Name"/> &amp;<xsl:value-of select="zf:formattax(../ram:SpecifiedSupplyChainTradeSettlement/ram:ApplicableTradeTax/ram:ApplicablePercent)"/> &amp; <xsl:value-of select="round(../ram:SpecifiedSupplyChainTradeDelivery/ram:BilledQuantity)"/> &amp; <xsl:value-of select="zf:formatmoney(../ram:SpecifiedSupplyChainTradeAgreement/ram:NetPriceProductTradePrice/ram:ChargeAmount)"/> &amp; <xsl:value-of select="zf:formatmoney(../ram:SpecifiedSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount)"/>\\</xsl:for-each>\hline 
+\begin{tabularx}{\textwidth/\real{0.7}}{@{}rlXrrrrrr@{}}
+\textbf{Pos.} &amp; \textbf{Art.-Nr.} &amp; \textbf{Bezeichnung} &amp; \textbf{USt.} &amp; \textbf{Menge} &amp; \textbf{EVP} &amp; \textbf{Rabatt} &amp; \textbf{EP} &amp; \textbf{GP} \\\hline
+<xsl:for-each select="$positions/ram:SpecifiedTradeProduct"><xsl:value-of select="../ram:AssociatedDocumentLineDocument/ram:LineID"/>&amp;<xsl:value-of select="./ram:SellerAssignedID"/>&amp;<xsl:value-of select="./ram:Name"/> &amp;<xsl:value-of select="zf:formattax(../ram:SpecifiedSupplyChainTradeSettlement/ram:ApplicableTradeTax/ram:ApplicablePercent)"/> &amp; <xsl:value-of select="round(../ram:SpecifiedSupplyChainTradeDelivery/ram:BilledQuantity)"/> &amp; <xsl:value-of select="zf:formatmoney(../ram:SpecifiedSupplyChainTradeAgreement/ram:GrossPriceProductTradePrice/ram:ChargeAmount)"/>&amp; <xsl:value-of select="zf:formatallowance(../ram:SpecifiedSupplyChainTradeAgreement/ram:GrossPriceProductTradePrice/ram:AppliedTradeAllowanceCharge)"/> &amp; <xsl:value-of select="zf:formatmoney(../ram:SpecifiedSupplyChainTradeAgreement/ram:NetPriceProductTradePrice/ram:ChargeAmount)"/> &amp; <xsl:value-of select="zf:formatmoney(../ram:SpecifiedSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount)"/>\\</xsl:for-each>\hline 
 \end{tabularx}
 }
 
 \newcommand{\taxsum}{%
-\begin{tabular}[b]{@{}rrr@{}}
-\textbf{Steuersatz} &amp; \textbf{Basispreis} &amp; \textbf{Steuern} \\\hline
-<xsl:for-each select="$taxsum"><xsl:value-of select="zf:formattax(ram:ApplicablePercent)"/>&amp;<xsl:value-of select="zf:formatmoney(ram:LineTotalBasisAmount)"/>&amp;<xsl:value-of select="zf:formatmoney(ram:CalculatedAmount)"/>\\</xsl:for-each>\hline
-Steuersumme &amp; &amp; <xsl:value-of select="zf:formatmoney($sums/ram:TaxTotalAmount)"/>
+\begin{tabular}[b]{@{}rrrrr@{}}
+\textbf{Steuersatz} &amp; \textbf{Basispreis} &amp; \textbf{Rabatt} &amp; \textbf{Endpreis} &amp; \textbf{Steuern} \\\hline
+<xsl:for-each select="$taxsum"> <xsl:value-of select="zf:formattax(ram:ApplicablePercent)"/>&amp;<xsl:value-of select="zf:formatmoney(ram:LineTotalBasisAmount)"/> &amp; <xsl:value-of select="zf:formatmoney(ram:AllowanceChargeBasisAmount)"/> &amp; <xsl:value-of select="zf:formatmoney(ram:BasisAmount)"/> &amp;<xsl:value-of select="zf:formatmoney(ram:CalculatedAmount)"/> \\ </xsl:for-each>\hline
+Steuersumme &amp; &amp; &amp; &amp; <xsl:value-of select="zf:formatmoney($sums/ram:TaxTotalAmount)"/>
 \end{tabular}
 }
 
@@ -118,7 +130,7 @@ Anzahlung &amp; &amp;<xsl:value-of select="zf:formatmoney($sums/ram:TotalPrepaid
 \end{tabular}
 }
 
-\date{<xsl:value-of select="substring($datistr,7,2)"/>.<xsl:value-of select="substring($datistr,5,2)"/>.<xsl:value-of select="substring($datistr,1,4)"/>}
+\date{Rechnungsdatum: <xsl:value-of select="substring($datistr,7,2)"/>.<xsl:value-of select="substring($datistr,5,2)"/>.<xsl:value-of select="substring($datistr,1,4)"/>}
 
 \setkomavar{fromname}{<xsl:value-of select="$seller/ram:Name"/>}
 \setkomavar{fromaddress}{<xsl:value-of select="$selleraddr/ram:LineOne"/>\\<xsl:if test="$selleraddr/ram:LineTwo"><xsl:value-of select="$selleraddr/ram:LineTwo"/>\\</xsl:if><xsl:value-of select="$selleraddr/ram:PostcodeCode"/>\ <xsl:value-of select="$selleraddr/ram:CityName"/>}
