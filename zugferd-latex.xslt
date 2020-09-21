@@ -97,8 +97,8 @@
 
 \firstfoot{%
 \rule{\textwidth}{.4pt}\\
-\begin{tabular}[t]{lcr}
-\scalebox{0.7}{\kontakt} &amp; \scalebox{0.7}{\taxid} &amp; \scalebox{0.7}{\bank} \\
+\begin{tabular}[t]{@{}lcr@{}}
+\scalebox{0.65}{\kontakt} &amp; \scalebox{0.65}{\taxid} &amp; \scalebox{0.65}{\bank} \\
 \end{tabular} \\
 \centerline{Seite \thepage\ von \pageref{LastPage}}
 }%
