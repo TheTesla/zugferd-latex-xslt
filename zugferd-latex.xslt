@@ -154,10 +154,13 @@ Anzahlung &amp; &amp;<xsl:value-of select="zf:formatmoney($sums/ram:TotalPrepaid
 		<xsl:value-of select="$buyeraddr/ram:PostcodeCode"/>\ <xsl:value-of select="$buyeraddr/ram:CityName"/>
 	}
 
-\opening{Sehr geehrte}
+\opening{Sehr geehrte Damen und Herren,}
 
+<xsl:value-of select="$header/ram:IncludedNote/ram:Content"/>
 
+\vspace{1cm}
 
+\noindent
 \scalebox{0.7}{
 \begin{tabularx}{\textwidth/\real{0.7}}{@{}X@{}}
 \itemtable
@@ -174,7 +177,9 @@ Anzahlung &amp; &amp;<xsl:value-of select="zf:formatmoney($sums/ram:TotalPrepaid
 
 \closing{Mit freundlichen Grußen}
 
-\encl{Lieferschein}
+
+
+%\encl{Lieferschein}
 
 \end{letter}
 \end{document}
