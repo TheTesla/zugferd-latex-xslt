@@ -33,7 +33,14 @@
 
 <func:function name="zf:formatmoney">
   <xsl:param name="x" select="."/>
-  <func:result select="concat(translate(format-number(round($x * 100) div 100, '0.00'), '.', ','), zf:formatcurrency($x))" />
+  <xsl:choose>
+  <xsl:when test="$x">
+    <func:result select="concat(translate(format-number(round($x * 100) div 100, '0.00'), '.', ','), zf:formatcurrency($x))" />
+  </xsl:when>
+  <xsl:otherwise>
+    <func:result select="''" />
+  </xsl:otherwise>
+  </xsl:choose>
 </func:function>
 
 <func:function name="zf:formattax">
